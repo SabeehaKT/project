@@ -27,6 +27,7 @@ export default function JournalAdd() {
   const navigate = useNavigate();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [image, setImage] = useState(null);
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
@@ -63,18 +64,24 @@ const setFontFamily = (font) => editor?.chain().focus().setFontFamily(font).run(
 
   const handleSubmit = async () => {
     try {
-      const token = localStorage.getItem('token')|| sessionStorage.getItem('token');
-      const response = await fetch(
-        "http://localhost:3000/api/auth/addjournal",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-             "Authorization": `Bearer ${token}`
-          },
-          body: JSON.stringify({ title, content, date: new Date() }),
-        }
-      );
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+
+      const formData = new FormData();
+      formData.append("title", title);
+      formData.append("content", content);
+      formData.append("date", new Date());
+      if (image) {
+        formData.append("image", image); // Add the image to the form data
+      }
+
+      const response = await fetch("http://localhost:3000/api/auth/addjournal", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`, // Add the token
+        },
+        body: formData, // Use FormData for file uploads
+      });
+
       const data = await response.json();
       if (data.success) {
         setSnackbar({
@@ -141,6 +148,22 @@ const setFontFamily = (font) => editor?.chain().focus().setFontFamily(font).run(
           onChange={(e) => setTitle(e.target.value)}
           sx={{ mb: 3, backgroundColor: "rgba(255, 255, 255, 0.8)" }}
         />
+        <TextField
+          type="file"
+          onChange={(e) => setImage(e.target.files[0])}
+          sx={{ mb: 3, backgroundColor: "rgba(255, 255, 255, 0.8)" }}
+          inputProps={{ accept: "image/*" }} // Accept only image files
+        />
+        {image && (
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="subtitle1">Image Preview:</Typography>
+            <img
+              src={URL.createObjectURL(image)}
+              alt="Preview"
+              style={{ maxWidth: "100%", maxHeight: "300px", marginTop: "10px" }}
+            />
+          </Box>
+        )}
         {/* Custom Toolbar */}
         <Box sx={{ mb: 2, display: "flex", gap: 1 }}>
           <IconButton

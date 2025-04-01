@@ -89,12 +89,14 @@ export default function HabitEdit() {
     setIsLoading(true);
 
     try {
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token"); // Retrieve the token
       const response = await fetch(
         `http://localhost:3000/api/auth/updatehabit/${habitToEdit._id}`,
         {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
             ...habitData,
