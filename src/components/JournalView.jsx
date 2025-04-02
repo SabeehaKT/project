@@ -19,7 +19,7 @@ export default function JournalView() {
   useEffect(() => {
     const fetchJournal = async () => {
       try {
-        const token = localStorage.getItem('token') || sessionStorage.getItem('token'); // Check both storages
+        const token = localStorage.getItem("token") || sessionStorage.getItem("token");
         console.log("Token being sent:", token); // Debug log
         if (!token) {
           throw new Error("No token found, please log in again");
@@ -29,12 +29,13 @@ export default function JournalView() {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`, // Add the token here
+            "Authorization": `Bearer ${token}`,
           },
         });
 
         const data = await response.json();
         if (data.success) {
+          console.log("Fetched journal data:", data.data); // Debug log
           setJournal(data.data);
         } else {
           setError(data.error || "Failed to fetch journal");
@@ -102,12 +103,52 @@ export default function JournalView() {
         </Typography>
         <Box
           sx={{
-            color: "#333333",
-            fontFamily: "'Caveat', cursive",
-            fontSize: "1.2rem",
+            display: "flex",
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            gap: 2,
           }}
-          dangerouslySetInnerHTML={{ __html: journal.content }}
-        />
+        >
+          <Box
+            sx={{
+              flex: 1,
+              color: "#333333",
+              fontFamily: "'Caveat', cursive",
+              fontSize: "1.2rem",
+            }}
+            dangerouslySetInnerHTML={{ __html: journal.content }}
+          />
+          {journal.image && (
+            <Box
+              sx={{
+                maxWidth: "40%", // Limit image width for neatness
+                textAlign: "right", // Right-align the content
+              }}
+            >
+              <Typography
+                variant="subtitle1"
+                sx={{
+                  color: "#333333",
+                  fontWeight: "bold",
+                  mb: 1,
+                }}
+              >
+              </Typography>
+              <img
+                src={`http://localhost:3000${journal.image}`}
+                alt="Journal Image"
+                style={{
+                  maxWidth: "100%",
+                  maxHeight: "300px",
+                  borderRadius: "8px", // Add slight rounding for neatness
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.1)", // Subtle shadow
+                }}
+                onError={(e) => console.error("Image failed to load:", e.target.src)}
+              />
+            </Box>
+          )}
+        </Box>
       </Container>
     </>
   );

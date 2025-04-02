@@ -38,6 +38,8 @@ export default function SignUpPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [acceptTerms, setAcceptTerms] = useState(false);
+  const [username, setUsername] = useState("");
+  const [usernameError, setUsernameError] = useState("");
 
   // Form validation states
   const [emailError, setEmailError] = useState("");
@@ -99,6 +101,17 @@ export default function SignUpPage() {
       setConfirmPasswordError("");
     }
 
+    // Validate username
+    if (!username) {
+      setUsernameError("Username is required");
+      isValid = false;
+    } else if (username.length < 3) {
+      setUsernameError("Username must be at least 3 characters");
+      isValid = false;
+    } else {
+      setUsernameError("");
+    }
+
     // Validate terms acceptance
     if (!acceptTerms) {
       isValid = false;
@@ -117,7 +130,7 @@ export default function SignUpPage() {
     setIsLoading(true);
 
     try {
-      const result = await authService.register(email, password);
+      const result = await authService.register(username, email, password);
       setAlertMessage(
         "Account created successfully! Redirecting to dashboard..."
       );
@@ -150,7 +163,7 @@ export default function SignUpPage() {
       <AppBar position="static" sx={{ backgroundColor: "#009688", padding: 1 }}>
         <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
           <Typography variant="h6" sx={{ fontWeight: "bold" }}>
-            HabitTracker
+            MindPal
           </Typography>
           <Box>
             <IconButton
@@ -212,6 +225,26 @@ export default function SignUpPage() {
           <Divider sx={{ my: 3 }} />
 
           <Box component="form" onSubmit={handleSignUp}>
+            <TextField
+              fullWidth
+              margin="normal"
+              label="Username"
+              type="text"
+              variant="outlined"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+              error={!!usernameError}
+              helperText={usernameError}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <AccountCircleIcon sx={{ color: usernameError ? "error" : "#009688" }} />
+                  </InputAdornment>
+                ),
+              }}
+            />
+
             <TextField
               fullWidth
               margin="normal"
@@ -367,7 +400,7 @@ export default function SignUpPage() {
         }}
         elevation={3}
       >
-        <Box sx={{ display: "flex", justifyContent: "space-around", p: 1 }}>
+        {/* <Box sx={{ display: "flex", justifyContent: "space-around", p: 1 }}>
           <IconButton sx={{ color: "#009688" }} onClick={() => navigate("/dashboard")}>
             <HomeIcon />
           </IconButton>
@@ -380,7 +413,7 @@ export default function SignUpPage() {
           <IconButton sx={{ color: "#009688" }} onClick={() => navigate("/about")}>
             <InfoIcon />
           </IconButton>
-        </Box>
+        </Box> */}
       </Paper>
     </>
   );

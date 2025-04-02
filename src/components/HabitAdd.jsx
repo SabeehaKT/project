@@ -57,6 +57,8 @@ export default function HabitAdd() {
     "Productivity",
     "Learning",
     "Mindfulness",
+    "Diet",
+    "Sleep",
     "Other",
   ];
 

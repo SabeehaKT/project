@@ -14,6 +14,7 @@ import JournalEdit from './components/JournalEdit';
 import JournalAdd from './components/JournalAdd';
 import JournalView from './components/JournalView';
 import HabitStats from './components/HabitStats';
+import HabitView from './components/HabitView';
 
 
 const App = () =>{
@@ -28,6 +29,7 @@ const App = () =>{
     <Route path="/welcome" element={<WelcomePage />} />
     <Route path="/habitlist" element={<HabitList />} />
     <Route path="/habitedit" element={<HabitEdit />} />
+    <Route path="/habitview" element={<HabitView />} />
     <Route path="/stats" element={<HabitStats />} />
     <Route path="/journallist" element={<JournalList />} />
     <Route path="/journaladd" element={<JournalAdd />} />

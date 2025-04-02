@@ -31,6 +31,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import WhatshotIcon from "@mui/icons-material/Whatshot";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
+import VisibilityIcon from "@mui/icons-material/Visibility"; // New import for view icon
 
 export default function HabitList() {
   const navigate = useNavigate();
@@ -44,24 +45,13 @@ export default function HabitList() {
   const [showChart, setShowChart] = useState(false);
   const chartData = habits.map((habit) => ({
     name: habit.title,
-    completionCount: habit.completions.length, // Number of times the habit was marked completed
+    completionCount: habit.completions.length,
   }));
 
-  // Fetch habits from the backend
   useEffect(() => {
     const fetchHabits = async () => {
       try {
-        const token =
-          localStorage.getItem("token") || sessionStorage.getItem("token");
-        console.log(
-          "localStorage contents before fetch:",
-          localStorage.getItem("token")
-        );
-        console.log(
-          "Token from sessionStorage:",
-          sessionStorage.getItem("token")
-        );
-        console.log("Token being sent:", token);
+        const token =localStorage.getItem("token") || sessionStorage.getItem("token");
         const response = await fetch(
           "http://localhost:3000/api/auth/gethabit",
           {
@@ -96,7 +86,6 @@ export default function HabitList() {
     fetchHabits();
   }, []);
 
-  // Delete a habit
   const handleDelete = async (id) => {
     try {
       const token =
@@ -112,7 +101,6 @@ export default function HabitList() {
         }
       );
       const data = await response.json();
-
       if (data.success) {
         setHabits(habits.filter((habit) => habit._id !== id));
         setSnackbar({
@@ -137,7 +125,6 @@ export default function HabitList() {
     }
   };
 
-  // Toggle habit completion for today
   const handleToggleCompletion = async (habit) => {
     try {
       const token =
@@ -198,9 +185,12 @@ export default function HabitList() {
     navigate("/habitedit", { state: habit });
   };
 
+  const handleView = (habit) => {
+    navigate("/habitview", { state: habit });
+  };
+
   return (
     <>
-      {/* Navbar */}
       <AppBar position="static" sx={{ backgroundColor: "#009688", padding: 1 }}>
         <Toolbar>
           <IconButton
@@ -230,11 +220,12 @@ export default function HabitList() {
         </Toolbar>
       </AppBar>
 
-      {/* Habits List Section */}
       <Container
         maxWidth="lg"
         sx={{ marginTop: 6, padding: 4, bgcolor: "#F7F7F7", borderRadius: 2 }}
-      >
+     
+
+ >
         <Typography
           variant="h5"
           fontWeight="bold"
@@ -242,10 +233,7 @@ export default function HabitList() {
         >
           Your Habits
         </Typography>
-        {/* Replace the existing chart Box (lines ~128-140) with this */}
         <Box sx={{ mb: 6, px: 2 }}>
-          {" "}
-          {/* Increased bottom margin and horizontal padding */}
           <Button
             variant="contained"
             onClick={() => setShowChart(!showChart)}
@@ -255,8 +243,8 @@ export default function HabitList() {
               fontWeight: "bold",
               padding: "10px 20px",
               borderRadius: "8px",
-              textTransform: "none", // Keeps text natural (not all caps)
-              "&:hover": { backgroundColor: "#00796b" }, // Darker teal on hover
+              textTransform: "none",
+              "&:hover": { backgroundColor: "#00796b" },
             }}
           >
             {showChart ? "Hide Completion Chart" : "View Completion Chart"}
@@ -265,14 +253,14 @@ export default function HabitList() {
             <Box
               sx={{
                 width: "100%",
-                height: 350, // Slightly taller for better visibility
-                mt: 4, // Space between button and chart
-                mb: 6, // Space between chart and habits
-                p: 3, // Padding inside the chart container
-                backgroundColor: "#FFFFFF", // White background for contrast
-                borderRadius: "10px", // Matches card radius
-                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.05)", // Subtle shadow like habits
-                border: "1px solid #e0e0e0", // Light border for definition
+                height: 350,
+                mt: 4,
+                mb: 6,
+                p: 3,
+                backgroundColor: "#FFFFFF",
+                borderRadius: "10px",
+                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.05)",
+                border: "1px solid #e0e0e0",
               }}
             >
               <Typography
@@ -287,9 +275,8 @@ export default function HabitList() {
                   <XAxis
                     dataKey="name"
                     stroke="#333333"
-                    tick={{ fontSize: 12 }} // Smaller font for readability
-                    interval={0} // Show all habit names
-                    // angle={-45} // Tilt labels for space
+                    tick={{ fontSize: 12 }}
+                    interval={0}
                     height={80}
                     tickline={false}
                     textAnchor="end"
@@ -316,7 +303,7 @@ export default function HabitList() {
                   <Bar
                     dataKey="completionCount"
                     fill="#009688"
-                    radius={[4, 4, 0, 0]} // Rounded tops for a polished look
+                    radius={[4, 4, 0, 0]}
                   />
                 </BarChart>
               </ResponsiveContainer>
@@ -362,7 +349,7 @@ export default function HabitList() {
                 <Grid item xs={12} sm={4} key={habit._id}>
                   <Card
                     sx={{
-                      backgroundColor: isDueToday ? "#e8f5e9" : "#FFFFFF", // Highlight if due today
+                      backgroundColor: isDueToday ? "#e8f5e9" : "#FFFFFF",
                       border: "2px solid #009688",
                       borderRadius: "10px",
                       boxShadow: "0 2px 8px rgba(0, 0, 0, 0.05)",
@@ -408,6 +395,12 @@ export default function HabitList() {
                           </Typography>
                         </Box>
                         <Box sx={{ display: "flex", gap: 1 }}>
+                          <IconButton
+                            onClick={() => handleView(habit)} // New View button
+                            sx={{ color: "#4A90E2" }}
+                          >
+                            <VisibilityIcon />
+                          </IconButton>
                           <IconButton
                             onClick={() => handleEdit(habit)}
                             sx={{ color: "#4A90E2" }}
@@ -466,9 +459,9 @@ export default function HabitList() {
                           mb: 2,
                         }}
                       >
-                        {/* <Typography variant="body2" sx={{ color: "#333333" }}>
+                        <Typography variant="body2" sx={{ color: "#333333" }}>
                           {habit.description}
-                        </Typography> */}
+                        </Typography>
                       </Box>
                       <Typography
                         variant="body2"

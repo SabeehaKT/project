@@ -1,344 +1,469 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Typography,
   Box,
   Container,
   Paper,
-  Avatar,
   Button,
-  TextField,
-  Divider,
-  Switch,
-  FormControlLabel,
   Grid,
+  Avatar,
+  Divider,
+  TextField,
   AppBar,
   Toolbar,
   IconButton,
+  Card,
+  CardContent,
   Snackbar,
-  Alert
+  Alert,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import HomeIcon from "@mui/icons-material/Home";
-import EditIcon from "@mui/icons-material/Edit";
-import SaveIcon from "@mui/icons-material/Save";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import InfoIcon from "@mui/icons-material/Info";
+import EditIcon from "@mui/icons-material/Edit";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import SaveIcon from "@mui/icons-material/Save";
 import LogoutIcon from "@mui/icons-material/Logout";
+import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+import BookIcon from "@mui/icons-material/Book";
+import ListIcon from "@mui/icons-material/List";
+import authService from "../services/authService";
 
 export default function ProfilePage() {
   const navigate = useNavigate();
-
-  // Mock user data - in a real app, this would come from your backend
-  const [userData, setUserData] = useState({
-    name: "Alex Johnson",
-    email: "alex.johnson@example.com",
-    joinDate: "January 15, 2025",
-    profileImage: "", // URL would go here
-    goalStatement: "I want to build consistent exercise and reading habits.",
-    notificationsEnabled: true,
-    emailUpdates: false,
-    weeklyReports: true,
-    darkMode: false
+  
+  // State for user data and form
+  const [userData, setUserData] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({
+    username: "",
+    email: "",
+    fullName: "",
+    bio: ""
+  });
+  const [notification, setNotification] = useState({
+    open: false,
+    message: "",
+    severity: "success"
   });
 
-  const [editMode, setEditMode] = useState(false);
-  const [showSnackbar, setShowSnackbar] = useState(false);
+  // Fetch user data on component mount
+  useEffect(() => {
+    const currentUser = authService.getCurrentUser();
+    if (currentUser) {
+      setUserData({
+        username: currentUser.username,
+        email: currentUser.email || "user@example.com", // Fallback if email not provided
+        fullName: currentUser.fullName || "", 
+        bio: currentUser.bio || "No bio added yet",
+        memberSince: currentUser.memberSince || "January 2023",
+        totalHabits: 7,
+        completedHabits: 143,
+        currentStreak: 5,
+        longestStreak: 14
+      });
+      
+      // Initialize form data with user data
+      setFormData({
+        username: currentUser.username,
+        email: currentUser.email || "user@example.com",
+        fullName: currentUser.fullName || "",
+        bio: currentUser.bio || ""
+      });
+    } else {
+      // Redirect to login if no user is found
+      navigate("/login");
+    }
+  }, [navigate]);
 
-  const handleChange = (e) => {
-    const { name, value, checked } = e.target;
-    setUserData(prev => ({
-      ...prev,
-      [name]: e.target.type === "checkbox" ? checked : value
-    }));
+  // Handle form input changes
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: value
+    });
   };
 
-  const handleSave = () => {
-    // Here you would typically send the updated data to your backend
-    console.log("Saving user data:", userData);
-    setEditMode(false);
-    setShowSnackbar(true);
+  // Handle save profile
+  const handleSaveProfile = () => {
+    // Here you would typically call an API to update the user profile
+    // For now, we'll just update the local state
+    setUserData({
+      ...userData,
+      username: formData.username,
+      email: formData.email,
+      fullName: formData.fullName,
+      bio: formData.bio
+    });
+    
+    setIsEditing(false);
+    setNotification({
+      open: true,
+      message: "Profile updated successfully!",
+      severity: "success"
+    });
+    
+    // You would update the authService user data here
+    // authService.updateUserProfile(formData);
   };
 
+  // Handle logout
   const handleLogout = () => {
-    // Handle logout logic here
-    console.log("Logging out...");
-    navigate("/");
+    authService.logout();
+    navigate("/home");
   };
+
+  // Close notification
+  const handleCloseNotification = () => {
+    setNotification({
+      ...notification,
+      open: false
+    });
+  };
+
+  // Show a loading state while userData is being fetched
+  if (!userData) {
+    return (
+      <Container maxWidth="md" sx={{ marginTop: 4 }}>
+        <Typography variant="h6">Loading...</Typography>
+      </Container>
+    );
+  }
 
   return (
     <>
       {/* Navbar */}
       <AppBar position="static" sx={{ backgroundColor: "#009688", padding: 1 }}>
-        <Toolbar>
-          <IconButton
-            edge="start"
-            color="inherit"
-            onClick={() => navigate("/welcome")}
-            sx={{ marginRight: 2 }}
-          >
-            <ArrowBackIcon />
-          </IconButton>
-          <Typography variant="h6" sx={{ fontWeight: "bold", flexGrow: 1 }}>
-            My Profile
+        <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
+          <Typography variant="h6" sx={{ fontWeight: "bold", color: "#FFFFFF" }}>
+            MindPal
           </Typography>
-          {editMode ? (
-            <IconButton color="inherit" onClick={handleSave}>
-              <SaveIcon />
-            </IconButton>
-          ) : (
-            <IconButton color="inherit" onClick={() => setEditMode(true)}>
-              <EditIcon />
-            </IconButton>
-          )}
+          <Box sx={{ display: "flex", gap: 2 }}>
+            <Button
+              color="inherit"
+              startIcon={<ListIcon />}
+              onClick={() => navigate("/habitlist")}
+              sx={{ fontWeight: "bold", "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.2)" } }}
+            >
+              Habits
+            </Button>
+            <Button
+              color="inherit"
+              startIcon={<BookIcon />}
+              onClick={() => navigate("/journallist")}
+              sx={{ fontWeight: "bold", "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.2)" } }}
+            >
+              Journals
+            </Button>
+            <Button
+              color="inherit"
+              startIcon={<AccountCircleIcon />}
+              onClick={() => navigate("/profile")}
+              sx={{ fontWeight: "bold", "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.2)" }, backgroundColor: "rgba(255, 255, 255, 0.1)" }}
+            >
+              Profile
+            </Button>
+          </Box>
         </Toolbar>
       </AppBar>
 
-      {/* Main Content */}
-      <Container maxWidth="md" sx={{ marginTop: 4, marginBottom: 8 }}>
-        <Paper elevation={3} sx={{ padding: 4, borderRadius: 2 }}>
-          {/* Profile Header */}
-          <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, alignItems: "center", marginBottom: 4 }}>
-            <Avatar
-              src={userData.profileImage}
-              alt={userData.name}
-              sx={{
-                width: 120,
-                height: 120,
-                fontSize: "3rem",
-                bgcolor: "#009688",
-                marginRight: { xs: 0, sm: 4 },
-                marginBottom: { xs: 2, sm: 0 }
-              }}
-            >
-              {userData.name.split(" ").map(n => n[0]).join("")}
-            </Avatar>
-            <Box sx={{ flexGrow: 1 }}>
-              {editMode ? (
-                <TextField
-                  fullWidth
-                  label="Name"
-                  name="name"
-                  value={userData.name}
-                  onChange={handleChange}
-                  margin="normal"
-                  variant="outlined"
-                />
-              ) : (
-                <Typography variant="h4" fontWeight="bold">
-                  {userData.name}
-                </Typography>
-              )}
-              <Typography variant="body1" color="textSecondary">
-                Member since: {userData.joinDate}
-              </Typography>
-              {!editMode && (
-                <Typography variant="body2" sx={{ marginTop: 1 }}>
-                  {userData.email}
-                </Typography>
-              )}
-            </Box>
-          </Box>
+      {/* Profile Content */}
+      <Container maxWidth="md" sx={{ mt: 4, mb: 8 }}>
+        {/* Back Button */}
+        <Button 
+          startIcon={<ArrowBackIcon />} 
+          onClick={() => navigate(-1)} 
+          sx={{ mb: 2, color: "#757575" }}
+        >
+          Back
+        </Button>
 
-          <Divider sx={{ my: 3 }} />
-
-          {/* Personal Information */}
-          <Typography variant="h5" fontWeight="bold" sx={{ marginBottom: 2 }}>
-            Personal Information
-          </Typography>
-
-          <Grid container spacing={3}>
-            <Grid item xs={12}>
-              {editMode ? (
-                <TextField
-                  fullWidth
-                  label="Email"
-                  name="email"
-                  type="email"
-                  value={userData.email}
-                  onChange={handleChange}
-                  margin="normal"
-                  variant="outlined"
-                />
-              ) : (
-                <Box sx={{ display: "flex", marginBottom: 2 }}>
-                  <Typography variant="subtitle1" fontWeight="bold" sx={{ minWidth: 120 }}>
-                    Email:
-                  </Typography>
-                  <Typography variant="body1">
-                    {userData.email}
-                  </Typography>
-                </Box>
-              )}
-            </Grid>
-
-            <Grid item xs={12}>
-              <Typography variant="subtitle1" fontWeight="bold" sx={{ marginBottom: 1 }}>
-                Personal Goal:
-              </Typography>
-              {editMode ? (
-                <TextField
-                  fullWidth
-                  name="goalStatement"
-                  value={userData.goalStatement}
-                  onChange={handleChange}
-                  margin="normal"
-                  variant="outlined"
-                  multiline
-                  rows={3}
-                  placeholder="What are your habit goals?"
-                />
-              ) : (
-                <Typography variant="body1" paragraph>
-                  {userData.goalStatement}
-                </Typography>
-              )}
-            </Grid>
-          </Grid>
-
-          <Divider sx={{ my: 3 }} />
-
-          {/* Preferences Section */}
-          <Typography variant="h5" fontWeight="bold" sx={{ marginBottom: 2 }}>
-            Preferences
-          </Typography>
-
-          <Grid container spacing={2}>
-            <Grid item xs={12}>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={userData.notificationsEnabled}
-                    onChange={handleChange}
-                    name="notificationsEnabled"
-                    color="primary"
-                    disabled={!editMode}
-                  />
-                }
-                label="Push Notifications"
-              />
-            </Grid>
-
-            <Grid item xs={12}>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={userData.emailUpdates}
-                    onChange={handleChange}
-                    name="emailUpdates"
-                    color="primary"
-                    disabled={!editMode}
-                  />
-                }
-                label="Email Updates"
-              />
-            </Grid>
-
-            <Grid item xs={12}>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={userData.weeklyReports}
-                    onChange={handleChange}
-                    name="weeklyReports"
-                    color="primary"
-                    disabled={!editMode}
-                  />
-                }
-                label="Weekly Progress Reports"
-              />
-            </Grid>
-
-            <Grid item xs={12}>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={userData.darkMode}
-                    onChange={handleChange}
-                    name="darkMode"
-                    color="primary"
-                    disabled={!editMode}
-                  />
-                }
-                label="Dark Mode"
-              />
-            </Grid>
-          </Grid>
-
-          <Divider sx={{ my: 3 }} />
-
-          {/* Account Actions */}
-          <Box sx={{ marginTop: 4, display: "flex", justifyContent: "space-between" }}>
-            <Button
-              variant="outlined"
-              color="warning"
-              startIcon={<LogoutIcon />}
-              onClick={handleLogout}
-            >
-              Logout
-            </Button>
-
-            {editMode && (
+        <Paper elevation={3} sx={{ p: 4, borderRadius: 2 }}>
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+            <Typography variant="h4" fontWeight="bold" sx={{ color: "#333333" }}>
+              My Profile
+            </Typography>
+            {isEditing ? (
               <Box>
-                <Button
-                  variant="outlined"
-                  color="inherit"
-                  onClick={() => setEditMode(false)}
-                  sx={{ marginRight: 2 }}
+                <Button 
+                  variant="contained" 
+                  startIcon={<SaveIcon />} 
+                  onClick={handleSaveProfile}
+                  sx={{ 
+                    backgroundColor: "#009688", 
+                    "&:hover": { backgroundColor: "#00796B" },
+                    mr: 1
+                  }}
+                >
+                  Save
+                </Button>
+                <Button 
+                  variant="outlined" 
+                  onClick={() => setIsEditing(false)}
+                  sx={{ 
+                    color: "#757575", 
+                    borderColor: "#757575", 
+                    "&:hover": { borderColor: "#616161", color: "#616161" } 
+                  }}
                 >
                   Cancel
                 </Button>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  startIcon={<SaveIcon />}
-                  onClick={handleSave}
-                >
-                  Save Changes
-                </Button>
               </Box>
+            ) : (
+              <Button 
+                variant="outlined" 
+                startIcon={<EditIcon />} 
+                onClick={() => setIsEditing(true)}
+                sx={{ 
+                  color: "#009688", 
+                  borderColor: "#009688", 
+                  "&:hover": { borderColor: "#00796B", color: "#00796B" } 
+                }}
+              >
+                Edit Profile
+              </Button>
             )}
           </Box>
+          
+          <Grid container spacing={4}>
+            {/* Left Column - Avatar and Stats */}
+            <Grid item xs={12} md={4}>
+              <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                <Avatar 
+                  sx={{ 
+                    width: 120, 
+                    height: 120, 
+                    bgcolor: "#009688", 
+                    fontSize: "3rem",
+                    mb: 2
+                  }}
+                >
+                  {userData.username.charAt(0).toUpperCase()}
+                </Avatar>
+                <Typography variant="h5" fontWeight="bold" sx={{ mb: 0.5 }}>
+                  {userData.username}
+                </Typography>
+                <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+                  Member since {userData.memberSince}
+                </Typography>
+              </Box>
+              
+              <Divider sx={{ my: 3 }} />
+              
+              {/* User Stats */}
+              <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>
+                Stats
+              </Typography>
+              
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="body2" color="textSecondary">
+                  Total Habits
+                </Typography>
+                <Typography variant="h6" fontWeight="bold">
+                  {userData.totalHabits}
+                </Typography>
+              </Box>
+              
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="body2" color="textSecondary">
+                  Completed Habits
+                </Typography>
+                <Typography variant="h6" fontWeight="bold">
+                  {userData.completedHabits}
+                </Typography>
+              </Box>
+              
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="body2" color="textSecondary">
+                  Current Streak
+                </Typography>
+                <Typography variant="h6" fontWeight="bold">
+                  {userData.currentStreak} days
+                </Typography>
+              </Box>
+              
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="body2" color="textSecondary">
+                  Longest Streak
+                </Typography>
+                <Typography variant="h6" fontWeight="bold">
+                  {userData.longestStreak} days
+                </Typography>
+              </Box>
+            </Grid>
+            
+            {/* Right Column - Profile Details */}
+            <Grid item xs={12} md={8}>
+              <Card sx={{ mb: 3 }}>
+                <CardContent>
+                  <Typography variant="h6" fontWeight="bold" sx={{ mb: 3 }}>
+                    Account Information
+                  </Typography>
+                  
+                  {isEditing ? (
+                    <Grid container spacing={3}>
+                      <Grid item xs={12}>
+                        <TextField
+                          fullWidth
+                          label="Username"
+                          name="username"
+                          value={formData.username}
+                          onChange={handleInputChange}
+                          variant="outlined"
+                          InputLabelProps={{ shrink: true }}
+                        />
+                      </Grid>
+                      <Grid item xs={12}>
+                        <TextField
+                          fullWidth
+                          label="Email"
+                          name="email"
+                          type="email"
+                          value={formData.email}
+                          onChange={handleInputChange}
+                          variant="outlined"
+                          InputLabelProps={{ shrink: true }}
+                        />
+                      </Grid>
+                      <Grid item xs={12}>
+                        <TextField
+                          fullWidth
+                          label="Full Name"
+                          name="fullName"
+                          value={formData.fullName}
+                          onChange={handleInputChange}
+                          variant="outlined"
+                          InputLabelProps={{ shrink: true }}
+                        />
+                      </Grid>
+                      <Grid item xs={12}>
+                        <TextField
+                          fullWidth
+                          label="Bio"
+                          name="bio"
+                          value={formData.bio}
+                          onChange={handleInputChange}
+                          variant="outlined"
+                          multiline
+                          rows={4}
+                          InputLabelProps={{ shrink: true }}
+                        />
+                      </Grid>
+                    </Grid>
+                  ) : (
+                    <>
+                      <Box sx={{ mb: 3 }}>
+                        <Typography variant="body2" color="textSecondary">
+                          Name
+                        </Typography>
+                        <Typography variant="body1">
+                          {userData.username}
+                        </Typography>
+                      </Box>
+                      
+                      <Box sx={{ mb: 3 }}>
+                        <Typography variant="body2" color="textSecondary">
+                          Email
+                        </Typography>
+                        <Typography variant="body1">
+                          {userData.email}
+                        </Typography>
+                      </Box>
+                      
+                      <Box sx={{ mb: 3 }}>
+                        <Typography variant="body2" color="textSecondary">
+                          Bio
+                        </Typography>
+                        <Typography variant="body1">
+                          {userData.fullName || "Not provided"}
+                        </Typography>
+                      </Box>
+                      
+                      <Box>
+                        <Typography variant="body2" color="textSecondary">
+                          Aim
+                        </Typography>
+                        <Typography variant="body1" sx={{ whiteSpace: "pre-line" }}>
+                          {userData.bio}
+                        </Typography>
+                      </Box>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+              
+              {/* Account Actions */}
+              <Box sx={{ mt: 4 }}>
+                <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>
+                  Account Actions
+                </Typography>
+                
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
+                  <Button 
+                    variant="outlined" 
+                    onClick={() => navigate("/change-password")}
+                    sx={{ 
+                      color: "#009688", 
+                      borderColor: "#009688", 
+                      "&:hover": { borderColor: "#00796B", color: "#00796B" } 
+                    }}
+                  >
+                    Change Password
+                  </Button>
+                  
+                  <Button 
+                    variant="outlined" 
+                    onClick={handleLogout}
+                    startIcon={<LogoutIcon />}
+                    sx={{ 
+                      color: "#f44336", 
+                      borderColor: "#f44336", 
+                      "&:hover": { borderColor: "#d32f2f", color: "#d32f2f" } 
+                    }}
+                  >
+                    Logout
+                  </Button>
+                </Box>
+              </Box>
+            </Grid>
+          </Grid>
         </Paper>
       </Container>
-
+      
       {/* Bottom Navigation */}
-      <Paper
-        sx={{
-          position: 'fixed',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          zIndex: 1100
-        }}
-        elevation={3}
-      >
-        <Box sx={{ display: 'flex', justifyContent: 'space-around', p: 1 }}>
-          <IconButton color="primary" onClick={() => navigate("/dashboard")}>
+      <Paper sx={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 1100 }} elevation={3}>
+        <Box sx={{ display: "flex", justifyContent: "space-around", p: 1 }}>
+          <IconButton sx={{ color: "#009688" }} onClick={() => navigate("/dashboard")}>
             <HomeIcon />
           </IconButton>
-          <IconButton color="primary" onClick={() => navigate("/add-habit")}>
+          <IconButton sx={{ color: "#009688" }} onClick={() => navigate("/add-habit")}>
             <AddCircleOutlineIcon />
           </IconButton>
-          <IconButton color="primary" onClick={() => navigate("/stats")}>
+          <IconButton sx={{ color: "#009688" }} onClick={() => navigate("/stats")}>
             <BarChartIcon />
           </IconButton>
-          <IconButton color="primary" onClick={() => navigate("/about")}>
+          <IconButton sx={{ color: "#009688" }} onClick={() => navigate("/about")}>
             <InfoIcon />
           </IconButton>
         </Box>
       </Paper>
-
-      {/* Success Snackbar */}
-      <Snackbar
-        open={showSnackbar}
-        autoHideDuration={6000}
-        onClose={() => setShowSnackbar(false)}
+      
+      {/* Notification */}
+      <Snackbar 
+        open={notification.open} 
+        autoHideDuration={5000} 
+        onClose={handleCloseNotification}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert onClose={() => setShowSnackbar(false)} severity="success" sx={{ width: '100%' }}>
-          Profile updated successfully!
+        <Alert 
+          onClose={handleCloseNotification} 
+          severity={notification.severity} 
+          sx={{ width: '100%' }}
+        >
+          {notification.message}
         </Alert>
       </Snackbar>
     </>

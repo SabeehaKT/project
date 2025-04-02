@@ -28,12 +28,13 @@ api.interceptors.request.use(
 
 const authService = {
   // Register new user
-  register: async (email, password) => {
+  register: async (username, email, password) => {
     try {
-      const response = await api.post('/register', { email, password });
+      const response = await api.post('/register', { username, email, password });
       if (response.data.token) {
         localStorage.setItem('token', response.data.token);
         localStorage.setItem('user', JSON.stringify(response.data.user));
+        console.log('User stored after registration:', response.data.user); // Add this
       }
       return response.data;
     } catch (error) {
@@ -53,6 +54,7 @@ const authService = {
         localStorage.setItem('token', response.data.token);
         localStorage.setItem('user', JSON.stringify(response.data.user));
         console.log("Token stored in localStorage:", localStorage.getItem('token'));
+        console.log("User stored after login:", response.data.user);
         return response.data;
       } else {
         console.warn("Response didn't contain a token:", response.data);

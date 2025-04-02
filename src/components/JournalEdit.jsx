@@ -17,23 +17,34 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 export default function JournalEdit() {
   const navigate = useNavigate();
   const location = useLocation();
-  const journal = location.state;
-  const [title, setTitle] = useState(journal.title);
-  const [content, setContent] = useState(journal.content);
+  const journal = location.state || {}; // Fallback to empty object if state is undefined
+  const [title, setTitle] = useState(journal.title || "");
+  const [content, setContent] = useState(journal.content || "");
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
     severity: "success",
   });
-  const [image, setImage] = useState(journal.image ? `/uploads/${journal.image}` : null); // Existing image
-  const [newImage, setNewImage] = useState(null); // New image to be uploaded
+  const [image, setImage] = useState(journal.image || null); // Existing image path
+  const [newImage, setNewImage] = useState(null); // New image to upload
 
-  // Clean the content to remove <p> tags when the component mounts
+  // Log journal data on mount
   useEffect(() => {
-    // Remove <p> and </p> tags from the content
-    const cleanedContent = journal.content.replace(/<\/?p>/g, "");
+    console.log("Journal object from location.state:", journal);
+    console.log("Initial image state:", journal.image);
+  }, [journal]);
+
+  // Clean content on mount
+  useEffect(() => {
+    const cleanedContent = (journal.content || "").replace(/<\/?p>/g, "");
     setContent(cleanedContent);
   }, [journal.content]);
+
+  // Log image state changes
+  useEffect(() => {
+    console.log("Existing image path:", image);
+    console.log("New image file:", newImage);
+  }, [image, newImage]);
 
   const handleSubmit = async () => {
     try {
@@ -43,16 +54,21 @@ export default function JournalEdit() {
       formData.append("title", title);
       formData.append("content", content);
       if (newImage) {
-        formData.append("image", newImage); // Add the new image if uploaded
+        formData.append("image", newImage); // New image to upload
+      } else if (image) {
+        formData.append("imagePath", image); // Keep existing image
       }
 
-      const response = await fetch(`http://localhost:3000/api/auth/updatejournal/${journal._id}`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`, // Add the token
-        },
-        body: formData, // Use FormData for file uploads
-      });
+      const response = await fetch(
+        `http://localhost:3000/api/auth/updatejournal/${journal._id}`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: formData,
+        }
+      );
 
       const data = await response.json();
       if (data.success) {
@@ -105,7 +121,8 @@ export default function JournalEdit() {
           bgcolor: "#FFF8E1",
           border: "1px solid #D3A962",
           borderRadius: 2,
-          backgroundImage: "url('https://www.transparenttextures.com/patterns/lined-paper.png')",
+          backgroundImage:
+            "url('https://www.transparenttextures.com/patterns/lined-paper.png')",
           minHeight: "80vh",
         }}
       >
@@ -118,28 +135,40 @@ export default function JournalEdit() {
             mb: 3,
             backgroundColor: "rgba(255, 255, 255, 0.8)",
             "& .MuiInputBase-input": {
-              padding: "12px 14px", // Increase padding for better spacing
-              fontSize: "1.1rem", // Slightly larger font for better readability
+              padding: "12px 14px",
+              fontSize: "1.1rem",
             },
           }}
         />
-{/* temp note */}
-        {image && (
+
+        {image ? (
           <Box sx={{ mb: 3 }}>
             <Typography variant="subtitle1">Current Image:</Typography>
             <img
-              src={`http://localhost:3000${image}`} // Use the correct URL for the image
+              src={`http://localhost:3000${image}`}
               alt="Journal"
-              style={{ maxWidth: "100%", maxHeight: "300px", marginTop: "10px" }}
+              style={{
+                maxWidth: "100%",
+                maxHeight: "300px",
+                marginTop: "10px",
+              }}
+              onError={(e) => {
+                console.error("Image failed to load:", e.target.src);
+                setImage(null); // Hide if it fails
+              }}
             />
           </Box>
+        ) : (
+          <Typography variant="subtitle1" sx={{ mb: 3 }}>
+            No existing image
+          </Typography>
         )}
 
         <TextField
           type="file"
           onChange={(e) => setNewImage(e.target.files[0])}
           sx={{ mb: 3, backgroundColor: "rgba(255, 255, 255, 0.8)" }}
-          inputProps={{ accept: "image/*" }} // Accept only image files
+          inputProps={{ accept: "image/*" }}
         />
 
         {newImage && (
@@ -148,7 +177,11 @@ export default function JournalEdit() {
             <img
               src={URL.createObjectURL(newImage)}
               alt="New Preview"
-              style={{ maxWidth: "100%", maxHeight: "300px", marginTop: "10px" }}
+              style={{
+                maxWidth: "100%",
+                maxHeight: "300px",
+                marginTop: "10px",
+              }}
             />
           </Box>
         )}
@@ -170,7 +203,10 @@ export default function JournalEdit() {
         <Button
           variant="contained"
           onClick={handleSubmit}
-          sx={{ backgroundColor: "#009688", "&:hover": { backgroundColor: "#00796B" } }}
+          sx={{
+            backgroundColor: "#009688",
+            "&:hover": { backgroundColor: "#00796B" },
+          }}
         >
           Update Entry
         </Button>

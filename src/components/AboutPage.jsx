@@ -29,7 +29,7 @@ export default function AboutPage() {
       <AppBar position="static" sx={{ backgroundColor: "#009688", padding: 1 }}>
         <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
           <Typography variant="h6" sx={{ fontWeight: "bold" }}>
-            HabitTracker
+            MindPal
           </Typography>
           <Box>
             <IconButton color="inherit" onClick={() => navigate("/profile")}>
@@ -43,7 +43,7 @@ export default function AboutPage() {
       <Container maxWidth="md" sx={{ marginTop: 4, marginBottom: 8 }}>
         <Paper elevation={3} sx={{ padding: 4, borderRadius: 2 }}>
           <Typography variant="h4" fontWeight="bold" sx={{ marginBottom: 2, textAlign: "center" }}>
-            About HabitTracker
+            About MindPal
           </Typography>
           
           <Typography variant="body1" paragraph>
@@ -122,7 +122,7 @@ export default function AboutPage() {
             />
           </Box>
           
-          <Box sx={{ display: "flex", justifyContent: "center", marginTop: 4 }}>
+          {/* <Box sx={{ display: "flex", justifyContent: "center", marginTop: 4 }}>
             <Button 
               variant="contained" 
               color="primary" 
@@ -143,7 +143,7 @@ export default function AboutPage() {
             >
               Add First Habit
             </Button>
-          </Box>
+          </Box> */}
         </Paper>
       </Container>
       
@@ -158,7 +158,7 @@ export default function AboutPage() {
         }} 
         elevation={3}
       >
-        <Box sx={{ display: 'flex', justifyContent: 'space-around', p: 1 }}>
+        {/* <Box sx={{ display: 'flex', justifyContent: 'space-around', p: 1 }}>
           <IconButton color="primary" onClick={() => navigate("/dashboard")}>
             <HomeIcon />
           </IconButton>
@@ -171,7 +171,7 @@ export default function AboutPage() {
           <IconButton color="primary" sx={{ color: "#009688" }}>
             <InfoIcon />
           </IconButton>
-        </Box>
+        </Box> */}
       </Paper>
     </>
   );

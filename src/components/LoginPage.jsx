@@ -91,7 +91,7 @@ export default function LoginPage() {
       <AppBar position="static" sx={{ backgroundColor: "#009688", padding: 1 }}>
         <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
           <Typography variant="h6" sx={{ fontWeight: "bold" }}>
-            HabitTracker
+            MindPal
           </Typography>
           <Box>
             <IconButton
@@ -266,7 +266,7 @@ export default function LoginPage() {
         }}
         elevation={3}
       >
-        <Box sx={{ display: "flex", justifyContent: "space-around", p: 1 }}>
+        {/* <Box sx={{ display: "flex", justifyContent: "space-around", p: 1 }}>
           <IconButton sx={{ color: "#009688" }} onClick={() => navigate("/dashboard")}>
             <HomeIcon />
           </IconButton>
@@ -279,7 +279,7 @@ export default function LoginPage() {
           <IconButton sx={{ color: "#009688" }} onClick={() => navigate("/about")}>
             <InfoIcon />
           </IconButton>
-        </Box>
+        </Box> */}
       </Paper>
     </>
   );

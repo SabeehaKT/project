@@ -6,17 +6,9 @@ import { BrowserRouter } from 'react-router-dom'
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
-      .then(registration => {
-        console.log('Service Worker registered with scope:', registration.scope);
-        
-        // Rest of your code for storing auth token...
-      })
-      .catch(error => {
-        console.error('Service Worker registration failed:', error);
-      });
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/sw.js").then((registration) => {
+    console.log("Service Worker registered:", registration);
   });
 }
 

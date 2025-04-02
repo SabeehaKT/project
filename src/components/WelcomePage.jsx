@@ -25,25 +25,37 @@ import WhatshotIcon from "@mui/icons-material/Whatshot";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import BookIcon from "@mui/icons-material/Book"; // For Journals
 import ListIcon from "@mui/icons-material/List"; // For Habits
+import authService from "../services/authService"; // Import authService
+
 
 export default function WelcomePage() {
   const navigate = useNavigate();
 
-  // Mock user data - would come from your authentication system
-  const [userData, setUserData] = useState({
-    name: "Alex",
-    lastLogin: "2 days ago",
-    streak: 5,
-    completionRate: 82,
-    todayHabits: 3,
-    totalHabits: 7,
-    recentAchievement: "5-Day Streak",
-  });
-
-  // Get time of day for personalized greeting
+  // State for user data, initialized as null until fetched
+  const [userData, setUserData] = useState(null);
   const [greeting, setGreeting] = useState("");
 
+  // Fetch user data and set greeting on component mount
   useEffect(() => {
+    // Fetch user data from authService
+    const currentUser = authService.getCurrentUser();
+    console.log("Current user data:", currentUser.username); // Debug log
+    if (currentUser) {
+      setUserData({
+        username: currentUser.username, // Use username from registration
+        lastLogin: "2 days ago", // This could be fetched from backend if tracked
+        streak: 5, // Replace with real data from backend if available
+        completionRate: 82,
+        todayHabits: 3,
+        totalHabits: 7,
+        recentAchievement: "5-Day Streak",
+      });
+    } else {
+      // Redirect to login if no user is found (optional)
+      navigate("/login");
+    }
+
+    // Set greeting based on time of day
     const hour = new Date().getHours();
     if (hour < 12) {
       setGreeting("Good morning");
@@ -52,7 +64,7 @@ export default function WelcomePage() {
     } else {
       setGreeting("Good evening");
     }
-  }, []);
+  }, [navigate]);
 
   // Recent activities - would come from your backend
   const recentActivities = [
@@ -82,6 +94,15 @@ export default function WelcomePage() {
       color: "#2e7d32",
     },
   ];
+
+  // Show a loading state while userData is being fetched
+  if (!userData) {
+    return (
+      <Container maxWidth="md" sx={{ marginTop: 4 }}>
+        <Typography variant="h6">Loading...</Typography>
+      </Container>
+    );
+  }
 
   return (
     <>
@@ -124,7 +145,7 @@ export default function WelcomePage() {
       <Container maxWidth="md" sx={{ marginTop: 4 }}>
         <Box sx={{ mb: 4 }}>
           <Typography variant="h4" fontWeight="bold" sx={{ color: "#333333" }}>
-            {greeting}, {userData.name}!
+            {greeting}, {userData.username}!
           </Typography>
           <Typography variant="body1" color="textSecondary">
             Welcome back! Last login: {userData.lastLogin}
@@ -162,7 +183,7 @@ export default function WelcomePage() {
               <LinearProgress
                 variant="determinate"
                 value={(userData.todayHabits / userData.totalHabits) * 100}
-                sx={{ height: 8, borderRadius: 5, backgroundColor: "#e0e0e0", "& .MuiLinearProgress-bar": { backgroundColor: "#009688" } }} // Changed color
+                sx={{ height: 8, borderRadius: 5, backgroundColor: "#e0e0e0", "& .MuiLinearProgress-bar": { backgroundColor: "#009688" } }}
               />
             </Paper>
           </Grid>
@@ -287,7 +308,7 @@ export default function WelcomePage() {
         </Paper>
       </Container>
 
-      {/* Bottom Navigation (Optional - retained for mobile convenience) */}
+      {/* Bottom Navigation */}
       <Paper sx={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 1100 }} elevation={3}>
         <Box sx={{ display: "flex", justifyContent: "space-around", p: 1 }}>
           <IconButton sx={{ color: "#009688" }} onClick={() => navigate("/dashboard")}>
