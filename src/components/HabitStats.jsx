@@ -7,7 +7,7 @@ const HabitStats = () => {
   useEffect(() => {
     const fetchStats = async () => {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-      const response = await fetch("http://localhost:3000/api/auth/stats", {
+      const response = await fetch(`http://localhost:3000/api/auth/stats`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();

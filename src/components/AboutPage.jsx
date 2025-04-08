@@ -47,7 +47,7 @@ export default function AboutPage() {
           </Typography>
           
           <Typography variant="body1" paragraph>
-            Welcome to HabitTracker, your personal companion for building better habits and achieving your goals. 
+            Welcome to MindPal, your personal companion for building better habits and achieving your goals. 
             We believe that small, consistent actions lead to remarkable transformations. Our platform is designed 
             to help you establish positive routines, track your progress, and stay motivated on your journey.
           </Typography>

@@ -35,7 +35,7 @@ export default function JournalList() {
       try {
         const token = localStorage.getItem('token')|| sessionStorage.getItem('token');
         const response = await fetch(
-          "http://localhost:3000/api/auth/getjournal",
+          `http://localhost:3000/api/auth/getjournal`,
           {
             method: "GET",
             headers: { 

@@ -28,7 +28,7 @@ export default function HomePage() {
             variant="h6"
             sx={{ fontWeight: "bold", letterSpacing: 1, color: "#FFFFFF" }}
           >
-            HabitTracker
+            MindPal
           </Typography>
           <Box>
             <Button

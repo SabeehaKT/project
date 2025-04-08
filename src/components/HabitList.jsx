@@ -53,7 +53,7 @@ export default function HabitList() {
       try {
         const token =localStorage.getItem("token") || sessionStorage.getItem("token");
         const response = await fetch(
-          "http://localhost:3000/api/auth/gethabit",
+          `http://localhost:3000/api/auth/gethabit`,
           {
             method: "GET",
             headers: {

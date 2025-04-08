@@ -20,6 +20,7 @@ import { useNavigate } from "react-router-dom";
 import PaletteIcon from "@mui/icons-material/Palette";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+// import { requestAndSaveNotificationPermission } from '../main';
 
 export default function HabitAdd() {
   const navigate = useNavigate();
@@ -63,18 +64,6 @@ export default function HabitAdd() {
   ];
 
   const colors = ["#50C878", "#E94B3C", "#F5A623", "#4A90E2", "#333333"];
-
-  // Request notification permission on component mount
-  useEffect(() => {
-    if (!("Notification" in window)) {
-      console.log("This browser does not support desktop notification");
-      return;
-    }
-
-    if (Notification.permission !== "granted" && Notification.permission !== "denied") {
-      Notification.requestPermission();
-    }
-  }, []);
 
   // Handle reminder time changes
   useEffect(() => {
@@ -160,16 +149,23 @@ export default function HabitAdd() {
       [name]: value,
       ...(name === "reminder" && value && !prev.reminderTime ? { reminderTime: "08:00" } : {}),
     }));
+    
+    // Request notification permission when user turns on reminders
     if (name === "reminder" && value) {
-      if (Notification.permission !== "granted") {
-        Notification.requestPermission().then((permission) => {
-          if (permission !== "granted") {
-            alert("Please enable notifications for habit reminders!");
+      const userId = localStorage.getItem('userId');
+      requestAndSaveNotificationPermission(userId)
+        .then(granted => {
+          if (!granted) {
+            setSnackbar({
+              open: true,
+              message: "Please enable notifications for habit reminders!",
+              severity: "warning",
+            });
           }
         });
-      }
     }
   };
+  
 
   const handleDayToggle = (day) => {
     if (selectedDays.includes(day)) {
@@ -182,43 +178,36 @@ export default function HabitAdd() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-
+  
     try {
-      const token = localStorage.getItem('token')|| sessionStorage.getItem('token');
-      
-      // Register this reminder with the backend for persistent storage
-      if (habitData.reminder && habitData.reminderTime) {
-        // This could be a separate endpoint or part of the habit creation
-        await registerReminder(habitData.title, habitData.reminderTime, selectedDays, habitData.frequency);
-      }
-      
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+  
       const response = await fetch("http://localhost:3000/api/auth/createhabit", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-           "Authorization": `Bearer ${token}`
+          "Authorization": `Bearer ${token}`,
         },
         body: JSON.stringify({
           ...habitData,
           days: selectedDays,
         }),
       });
-
+  
       const data = await response.json();
-
+  
       if (data.success) {
         setSnackbar({
           open: true,
           message: "Habit created successfully!",
           severity: "success",
         });
-        
-        // Register this habit with the browser's service worker for background notifications
-        if (habitData.reminder && 'serviceWorker' in navigator) {
-          registerReminderWithServiceWorker(data.habitId, habitData.title, habitData.reminderTime, 
-                                          selectedDays, habitData.frequency);
+  
+        // Save reminder in Firebase
+        if (habitData.reminder) {
+          await registerReminder(habitData.title, habitData.reminderTime, selectedDays, habitData.frequency);
         }
-        
+  
         navigate("/habitlist");
       } else {
         setSnackbar({ open: true, message: data.error, severity: "error" });
@@ -235,15 +224,15 @@ export default function HabitAdd() {
       setIsLoading(false);
     }
   };
+  
 
   // Function to register a reminder with the backend
   const registerReminder = async (title, time, days, frequency) => {
     try {
       const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-      
       const userId = localStorage.getItem('userId');
       
-      await fetch("http://localhost:3000/api/auth/registerReminder", {
+      await fetch(`http://localhost:3000/api/auth/registerReminder`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -262,55 +251,6 @@ export default function HabitAdd() {
     } catch (error) {
       console.error("Error registering reminder:", error);
     }
-  };
-
-  // Function to register reminder with service worker for background notifications
-  const registerReminderWithServiceWorker = async (habitId, title, time, days, frequency) => {
-    try {
-      const registration = await navigator.serviceWorker.ready;
-      
-      if ('periodicSync' in registration) {
-        // Modern way: use Periodic Background Sync API (where supported)
-        await registration.periodicSync.register('reminder-sync', {
-          minInterval: 24 * 60 * 60 * 1000, // Daily sync
-        });
-      }
-      
-      // Store reminder details in IndexedDB for the service worker to access
-      const db = await openReminderDatabase();
-      const transaction = db.transaction(['reminders'], 'readwrite');
-      const store = transaction.objectStore('reminders');
-      
-      await store.put({
-        id: habitId,
-        title,
-        time,
-        days,
-        frequency,
-        enabled: true
-      });
-      
-      console.log("Reminder registered with service worker");
-    } catch (error) {
-      console.error("Error registering with service worker:", error);
-    }
-  };
-
-  // Helper function to open the reminder database
-  const openReminderDatabase = () => {
-    return new Promise((resolve, reject) => {
-      const request = indexedDB.open('reminders-db', 1);
-      
-      request.onupgradeneeded = (event) => {
-        const db = event.target.result;
-        if (!db.objectStoreNames.contains('reminders')) {
-          db.createObjectStore('reminders', { keyPath: 'id' });
-        }
-      };
-      
-      request.onsuccess = (event) => resolve(event.target.result);
-      request.onerror = (event) => reject(event.target.error);
-    });
   };
 
   return (

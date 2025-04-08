@@ -74,7 +74,7 @@ const setFontFamily = (font) => editor?.chain().focus().setFontFamily(font).run(
         formData.append("image", image); // Add the image to the form data
       }
 
-      const response = await fetch("http://localhost:3000/api/auth/addjournal", {
+      const response = await fetch(`http://localhost:3000/api/auth/addjournal`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`, // Add the token

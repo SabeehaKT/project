@@ -208,16 +208,16 @@ export default function WelcomePage() {
             variant="contained"
             sx={{ backgroundColor: "#009688", "&:hover": { backgroundColor: "#00796B" } }}
             size="large"
-            onClick={() => navigate("/dashboard")}
+            onClick={() => navigate("/profile")}
             startIcon={<HomeIcon />}
           >
-            Go to Dashboard
+            Go to Profile
           </Button>
           <Button
             variant="outlined"
             sx={{ color: "#009688", borderColor: "#009688", "&:hover": { borderColor: "#00796B", color: "#00796B" } }}
             size="large"
-            onClick={() => navigate("/add-habit")}
+            onClick={() => navigate("/habitadd")}
             startIcon={<AddCircleOutlineIcon />}
           >
             Add New Habit
@@ -311,13 +311,13 @@ export default function WelcomePage() {
       {/* Bottom Navigation */}
       <Paper sx={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 1100 }} elevation={3}>
         <Box sx={{ display: "flex", justifyContent: "space-around", p: 1 }}>
-          <IconButton sx={{ color: "#009688" }} onClick={() => navigate("/dashboard")}>
+          <IconButton sx={{ color: "#009688" }} onClick={() => navigate("/home")}>
             <HomeIcon />
           </IconButton>
-          <IconButton sx={{ color: "#009688" }} onClick={() => navigate("/add-habit")}>
+          <IconButton sx={{ color: "#009688" }} onClick={() => navigate("/habitadd")}>
             <AddCircleOutlineIcon />
           </IconButton>
-          <IconButton sx={{ color: "#009688" }} onClick={() => navigate("/stats")}>
+          <IconButton sx={{ color: "#009688" }} onClick={() => navigate("/habitlist")}>
             <BarChartIcon />
           </IconButton>
           <IconButton sx={{ color: "#009688" }} onClick={() => navigate("/about")}>
