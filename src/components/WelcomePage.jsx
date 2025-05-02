@@ -26,6 +26,7 @@ import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import BookIcon from "@mui/icons-material/Book"; // For Journals
 import ListIcon from "@mui/icons-material/List"; // For Habits
 import authService from "../services/authService"; // Import authService
+import { CheckCircleIcon } from "lucide-react";
 
 
 export default function WelcomePage() {
@@ -34,6 +35,9 @@ export default function WelcomePage() {
   // State for user data, initialized as null until fetched
   const [userData, setUserData] = useState(null);
   const [greeting, setGreeting] = useState("");
+  const [recentActivities, setRecentActivities] = useState([]);
+  const [suggestedHabits, setSuggestedHabits] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Fetch user data and set greeting on component mount
   useEffect(() => {
@@ -43,12 +47,12 @@ export default function WelcomePage() {
     if (currentUser) {
       setUserData({
         username: currentUser.username, // Use username from registration
-        lastLogin: "2 days ago", // This could be fetched from backend if tracked
-        streak: 5, // Replace with real data from backend if available
-        completionRate: 82,
-        todayHabits: 3,
-        totalHabits: 7,
-        recentAchievement: "5-Day Streak",
+        lastLogin: null,
+      streak: null,
+      completionRate: null,
+      todayHabits: null,
+      totalHabits: null,
+      recentAchievement: null,
       });
     } else {
       // Redirect to login if no user is found (optional)
@@ -65,38 +69,56 @@ export default function WelcomePage() {
       setGreeting("Good evening");
     }
   }, [navigate]);
+  
 
-  // Recent activities - would come from your backend
-  const recentActivities = [
-    { type: "completion", habit: "Morning Meditation", date: "Today, 7:30 AM" },
-    { type: "streak", habit: "Read for 30 minutes", days: 5, date: "Yesterday" },
-    { type: "milestone", habit: "Daily Exercise", achievement: "10 Day Milestone", date: "2 days ago" },
-  ];
-
-  // Suggested habits - would come from recommendation system
-  const suggestedHabits = [
-    {
-      title: "Drink Water",
-      category: "Health",
-      description: "Stay hydrated by drinking 8 glasses of water daily",
-      color: "#0288d1",
-    },
-    {
-      title: "Practice Gratitude",
-      category: "Mindfulness",
-      description: "Write down 3 things you're grateful for each day",
-      color: "#9c27b0",
-    },
-    {
-      title: "Take a Walk",
-      category: "Fitness",
-      description: "Get fresh air with a 15-minute daily walk",
-      color: "#2e7d32",
-    },
-  ];
+  useEffect(() => {
+    if (userData?.username) {
+      const fetchHabitData = async () => {
+        try {
+          // Fetch user stats - note that we're accessing the stats property of the response
+          const response = await authService.getUserHabitStats(userData.username);
+          const statsData = response.stats; // Access the stats property in the response
+          
+          setUserData((prev) => ({
+            ...prev,
+            lastLogin: statsData.lastLogin || 'Unknown',
+            streak: statsData.streak || 0,
+            completionRate: statsData.completionRate || 0,
+            todayHabits: statsData.todayHabits || 0,
+            totalHabits: statsData.totalHabits || 0,
+            completedHabits: statsData.completedHabits || 0,
+            recentAchievement: statsData.recentAchievement || 'None',
+          }));
+    
+          // For recent activities and suggested habits, you would need separate API endpoints
+          const activitiesResponse = await authService.getUserRecentActivity();
+          setRecentActivities(activitiesResponse || []);
+          setSuggestedHabits([]);
+          
+        } catch (error) {
+          console.error('Error fetching habit data:', error);
+          setUserData((prev) => ({
+            ...prev,
+            lastLogin: 'Unknown',
+            streak: 0,
+            completionRate: 0,
+            todayHabits: 0,
+            totalHabits: 0,
+            completedHabits: 0,
+            recentAchievement: 'None',
+          }));
+          setRecentActivities([]);
+          setSuggestedHabits([]);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      fetchHabitData();
+    }
+  }, [userData?.username]);
 
   // Show a loading state while userData is being fetched
-  if (!userData) {
+  if (isLoading || !userData) {
     return (
       <Container maxWidth="md" sx={{ marginTop: 4 }}>
         <Typography variant="h6">Loading...</Typography>
@@ -148,7 +170,7 @@ export default function WelcomePage() {
             {greeting}, {userData.username}!
           </Typography>
           <Typography variant="body1" color="textSecondary">
-            Welcome back! Last login: {userData.lastLogin}
+            Welcome back! Last login: {userData.lastLogin || "Unknown"}
           </Typography>
         </Box>
 
@@ -159,7 +181,7 @@ export default function WelcomePage() {
               <WhatshotIcon sx={{ color: "#f57c00", mr: 2, fontSize: 40 }} />
               <Box>
                 <Typography variant="h5" fontWeight="bold">
-                  {userData.streak} days
+                {userData.streak !== null ? `${userData.streak} days` : "0 days"}
                 </Typography>
                 <Typography variant="body2" color="textSecondary">
                   Current Streak
@@ -182,7 +204,7 @@ export default function WelcomePage() {
               </Box>
               <LinearProgress
                 variant="determinate"
-                value={(userData.todayHabits / userData.totalHabits) * 100}
+                value={userData.totalHabits ? (userData.todayHabits / userData.totalHabits) * 100 : 0}
                 sx={{ height: 8, borderRadius: 5, backgroundColor: "#e0e0e0", "& .MuiLinearProgress-bar": { backgroundColor: "#009688" } }}
               />
             </Paper>
@@ -195,7 +217,9 @@ export default function WelcomePage() {
                   Recent Achievement
                 </Typography>
                 <Typography variant="body1">
-                  {userData.recentAchievement}
+                {userData.recentAchievement && userData.recentAchievement !== 'None' 
+                ? userData.recentAchievement 
+                : "No achievements yet"}
                 </Typography>
               </Box>
             </Paper>
@@ -226,56 +250,85 @@ export default function WelcomePage() {
 
         {/* Recent Activity */}
         <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
-          <Typography variant="h5" fontWeight="bold" sx={{ mb: 2 }}>
-            Recent Activity
-          </Typography>
-          {recentActivities.map((activity, index) => (
-            <Box
-              key={index}
-              sx={{
-                display: "flex",
-                alignItems: "flex-start",
-                mb: 2,
-                pb: 2,
-                borderBottom: index < recentActivities.length - 1 ? "1px solid #eee" : "none",
-              }}
-            >
-              {activity.type === "completion" && (
-                <Box sx={{ bgcolor: "#e8f5e9", p: 1, borderRadius: "50%", display: "flex", mr: 2 }}>
-                  <CheckIcon sx={{ color: "#2e7d32" }} />
-                </Box>
-              )}
-              {activity.type === "streak" && (
-                <Box sx={{ bgcolor: "#fff3e0", p: 1, borderRadius: "50%", display: "flex", mr: 2 }}>
-                  <WhatshotIcon sx={{ color: "#f57c00" }} />
-                </Box>
-              )}
-              {activity.type === "milestone" && (
-                <Box sx={{ bgcolor: "#e3f2fd", p: 1, borderRadius: "50%", display: "flex", mr: 2 }}>
-                  <EmojiEventsIcon sx={{ color: "#009688" }} />
-                </Box>
-              )}
-              <Box sx={{ flexGrow: 1 }}>
-                <Typography variant="body1" fontWeight="bold">
-                  {activity.habit}
-                </Typography>
-                <Typography variant="body2">
-                  {activity.type === "completion" && "Completed"}
-                  {activity.type === "streak" && `${activity.days} day streak`}
-                  {activity.type === "milestone" && activity.achievement}
-                </Typography>
-                <Typography variant="caption" color="textSecondary">
-                  {activity.date}
-                </Typography>
-              </Box>
+  <Typography variant="h5" fontWeight="bold" sx={{ mb: 2 }}>
+    Recent Activity
+  </Typography>
+  
+  {recentActivities.length === 0 ? (
+    <Box sx={{ textAlign: 'center', py: 3 }}>
+      <Typography variant="body1" color="textSecondary">
+        No recent activity to show. Start tracking habits to see your progress here!
+      </Typography>
+    </Box>
+  ) : (
+    <>
+      {recentActivities.map((activity, index) => (
+        <Box
+          key={index}
+          sx={{
+            display: "flex",
+            alignItems: "flex-start",
+            mb: 2,
+            pb: 2,
+            borderBottom: index < recentActivities.length - 1 ? "1px solid #eee" : "none",
+          }}
+        >
+          {/* Icons based on activity type */}
+          {activity.type === "completion" && (
+            <Box sx={{ bgcolor: "#e8f5e9", p: 1, borderRadius: "50%", display: "flex", mr: 2 }}>
+              <CheckCircleIcon sx={{ color: "#2e7d32" }} />
             </Box>
-          ))}
-          <Box sx={{ textAlign: "center", mt: 2 }}>
-            <Button onClick={() => navigate("/stats")} endIcon={<BarChartIcon />}>
-              View All Activity
-            </Button>
+          )}
+          {activity.type === "streak" && (
+            <Box sx={{ bgcolor: "#fff3e0", p: 1, borderRadius: "50%", display: "flex", mr: 2 }}>
+              <WhatshotIcon sx={{ color: "#f57c00" }} />
+            </Box>
+          )}
+          {activity.type === "badge" && (
+            <Box sx={{ bgcolor: "#e3f2fd", p: 1, borderRadius: "50%", display: "flex", mr: 2 }}>
+              <EmojiEventsIcon sx={{ color: "#1565c0" }} />
+            </Box>
+          )}
+          {activity.type === "new" && (
+            <Box sx={{ bgcolor: "#f3e5f5", p: 1, borderRadius: "50%", display: "flex", mr: 2 }}>
+              <AddCircleIcon sx={{ color: "#7b1fa2" }} />
+            </Box>
+          )}
+          
+          <Box sx={{ flexGrow: 1 }}>
+            {/* Activity content based on type */}
+            <Typography variant="body1" fontWeight="bold">
+              {activity.habitName}
+            </Typography>
+            
+            <Typography variant="body2">
+            {activity.type === "completion" && `Completed "${activity.habitName}"`}
+            {activity.type === "streak" && `${activity.streakCount} day streak for "${activity.habitName}"`}
+            {activity.type === "badge" && `Earned "${activity.badgeName}" badge for "${activity.habitName}"`}
+            {activity.type === "new" && `Created new habit "${activity.habitId}"`}
+            </Typography>
+            
+            <Typography variant="caption" color="textSecondary">
+              {typeof activity.date === 'string' 
+                ? new Date(activity.date).toLocaleDateString() 
+                : activity.date.toLocaleDateString()}
+            </Typography>
           </Box>
-        </Paper>
+        </Box>
+      ))}
+    </>
+  )}
+  
+  <Box sx={{ textAlign: "center", mt: 2 }}>
+    <Button 
+      onClick={() => navigate("/stats")} 
+      endIcon={<BarChartIcon />}
+      sx={{ color: "#009688" }}
+    >
+      View All Activity
+    </Button>
+  </Box>
+</Paper>
 
         {/* Suggested Habits */}
         <Paper elevation={3} sx={{ p: 3, mb: 6 }}>

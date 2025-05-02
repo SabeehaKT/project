@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Typography,
   Box,
@@ -20,7 +20,9 @@ import { useNavigate } from "react-router-dom";
 import PaletteIcon from "@mui/icons-material/Palette";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-// import { requestAndSaveNotificationPermission } from '../main';
+import io from "socket.io-client";
+
+const socket = io("http://localhost:3000"); // Adjust URL to match your backend
 
 export default function HabitAdd() {
   const navigate = useNavigate();
@@ -65,107 +67,56 @@ export default function HabitAdd() {
 
   const colors = ["#50C878", "#E94B3C", "#F5A623", "#4A90E2", "#333333"];
 
-  // Handle reminder time changes
+  // Initialize Socket.IO and request notification permission
   useEffect(() => {
-    if (!habitData.reminder || !habitData.reminderTime) return;
+    const userId = localStorage.getItem("userId");
+    socket.emit("register", userId);
 
-    // Function to schedule a notification
-    const scheduleNotification = (title, time) => {
-      const [hours, minutes] = time.split(":");
-      const now = new Date();
-      const scheduledTime = new Date();
-      
-      scheduledTime.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
-      
-      // If the time has already passed today, schedule for tomorrow
-      if (scheduledTime <= now) {
-        scheduledTime.setDate(scheduledTime.getDate() + 1);
-      }
-      
-      const timeUntilReminder = scheduledTime.getTime() - now.getTime();
-      
-      console.log(`Scheduling reminder for ${title} in ${timeUntilReminder/1000/60} minutes`);
-      
-      // Return the timeout ID so it can be cleared if needed
-      return setTimeout(() => {
-        showNotification(title);
-      }, timeUntilReminder);
-    };
-    
-    // Function to display the notification
-    const showNotification = (title) => {
+    // Request notification permission
+    if (Notification.permission === "default") {
+      Notification.requestPermission().then((permission) => {
+        if (permission !== "granted") {
+          setSnackbar({
+            open: true,
+            message: "Please enable notifications for habit reminders!",
+            severity: "warning",
+          });
+        }
+      });
+    }
+
+    // Listen for notifications from the server
+    socket.on("notification", (message) => {
       setSnackbar({
         open: true,
-        message: `Reminder: It's time for ${title}!`,
+        message,
         severity: "info",
       });
-      
+
       if (Notification.permission === "granted") {
-        const notification = new Notification("Habit Reminder", {
-          body: `Time for ${title}!`,
+        new Notification("Habit Reminder", {
+          body: message,
           icon: "/reminder-icon.png",
         });
-        
-        // Add click handler to focus the app
-        notification.onclick = () => {
-          window.focus();
-        };
       }
-      
-      // Schedule the next reminder for tomorrow if it's a daily habit
-      if (habitData.frequency === "daily") {
-        scheduleNextReminder();
-      }
-    };
-    
-    // Schedule the next reminder
-    const scheduleNextReminder = () => {
-      const currentDay = new Date().toLocaleString('en-us', {weekday:'long'});
-      
-      // For weekly habits, check if the current day is selected
-      if (habitData.frequency === "weekly" || habitData.frequency === "custom") {
-        if (!selectedDays.includes(currentDay)) {
-          return null; // Don't schedule if today is not a selected day
-        }
-      }
-      
-      return scheduleNotification(habitData.title, habitData.reminderTime);
-    };
-    
-    // Schedule the initial reminder
-    const timeoutId = scheduleNextReminder();
-    
-    // Cleanup function
+    });
+
+    // Cleanup on unmount
     return () => {
-      if (timeoutId) clearTimeout(timeoutId);
+      socket.off("notification");
     };
-    
-  }, [habitData.reminder, habitData.reminderTime, habitData.title, habitData.frequency, selectedDays]);
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setHabitData((prev) => ({
       ...prev,
       [name]: value,
-      ...(name === "reminder" && value && !prev.reminderTime ? { reminderTime: "08:00" } : {}),
+      ...(name === "reminder" && value && !prev.reminderTime
+        ? { reminderTime: "08:00" }
+        : {}),
     }));
-    
-    // Request notification permission when user turns on reminders
-    if (name === "reminder" && value) {
-      const userId = localStorage.getItem('userId');
-      requestAndSaveNotificationPermission(userId)
-        .then(granted => {
-          if (!granted) {
-            setSnackbar({
-              open: true,
-              message: "Please enable notifications for habit reminders!",
-              severity: "warning",
-            });
-          }
-        });
-    }
   };
-  
 
   const handleDayToggle = (day) => {
     if (selectedDays.includes(day)) {
@@ -178,40 +129,44 @@ export default function HabitAdd() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-  
+
     try {
-      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-  
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+
       const response = await fetch("http://localhost:3000/api/auth/createhabit", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           ...habitData,
           days: selectedDays,
         }),
       });
-  
+
       const data = await response.json();
-  
+
       if (data.success) {
         setSnackbar({
           open: true,
           message: "Habit created successfully!",
           severity: "success",
         });
-  
-        // Save reminder in Firebase
+
+        // Register reminder with the backend
         if (habitData.reminder) {
-          await registerReminder(habitData.title, habitData.reminderTime, selectedDays, habitData.frequency);
+          await registerReminder(
+            habitData.title,
+            habitData.reminderTime,
+            selectedDays,
+            habitData.frequency
+          );
         }
-  
+
         navigate("/habitlist");
       } else {
         setSnackbar({ open: true, message: data.error, severity: "error" });
-        console.error("Error creating habit:", data.error);
       }
     } catch (error) {
       setSnackbar({
@@ -219,35 +174,30 @@ export default function HabitAdd() {
         message: "An error occurred!",
         severity: "error",
       });
-      console.error("Error:", error);
     } finally {
       setIsLoading(false);
     }
   };
-  
 
-  // Function to register a reminder with the backend
   const registerReminder = async (title, time, days, frequency) => {
     try {
-      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-      const userId = localStorage.getItem('userId');
-      
-      await fetch(`http://localhost:3000/api/auth/registerReminder`, {
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      const userId = localStorage.getItem("userId");
+
+      await fetch("http://localhost:3000/api/auth/registerReminder", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           title,
           time,
           days,
           frequency,
-          userId
+          userId,
         }),
       });
-      
-      console.log("Reminder registered with backend");
     } catch (error) {
       console.error("Error registering reminder:", error);
     }

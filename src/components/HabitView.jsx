@@ -32,12 +32,9 @@ export default function HabitView() {
       const fetchVideoSuggestions = async () => {
         setLoading(true);
         try {
-          const token =
-            localStorage.getItem("token") || sessionStorage.getItem("token");
+          const token = localStorage.getItem("token") || sessionStorage.getItem("token");
           const response = await fetch(
-            `http://localhost:3000/api/auth/videosuggestions?category=${encodeURIComponent(
-              habit.category
-            )}`,
+            `http://localhost:3000/api/auth/videosuggestions?category=${encodeURIComponent(habit.category)}`,
             {
               method: "GET",
               headers: {

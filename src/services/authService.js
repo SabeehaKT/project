@@ -146,7 +146,27 @@ const authService = {
     } catch (error) {
       throw error.response?.data || { message: 'Network error' };
     }
-  }
+  },
+
+  // Get user habit stats
+  getUserHabitStats: async (username) => {
+    try {
+      const response = await api.get(`/stats`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching habit stats:', error);
+      throw error.response?.data || { message: 'Failed to fetch habit stats' };
+    }
+  },
+  getUserRecentActivity: async () => {
+    try {
+      const response = await api.get(`/getrecentactivity`);
+      return response.data.activities;
+    } catch (error) {
+      console.error('Error fetching recent activity:', error);
+      throw error;
+    }
+  },
 };
 
 export default authService;
